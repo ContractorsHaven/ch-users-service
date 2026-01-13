@@ -1,0 +1,37 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ch-users-service:latest
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/ch-users-db
+      SPRING_DATASOURCE_USERNAME: chuser
+      SPRING_DATASOURCE_PASSWORD: ch-password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:18.1-alpine
+    environment:
+      POSTGRES_USER: chuser
+      POSTGRES_PASSWORD: ch-password
+      POSTGRES_DB: ch-users-db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "15432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgresuser -d postgresdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
