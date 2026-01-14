@@ -7,7 +7,7 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 public interface UserService {
-    Flux<User> findAll();
+    Flux<User> findAll(int page, int size);
     Mono<User> findById(UUID id);
     Mono<User> create(User user);
     Mono<User> update(UUID id, User user);

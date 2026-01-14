@@ -10,11 +10,13 @@ serviceAccount:
 autoscaling:
   enabled: false
 
-# Pod annotations for Prometheus scraping
+# Pod annotations for Prometheus scraping and OpenTelemetry auto-instrumentation
 podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "8080"
   prometheus.io/path: "/actuator/prometheus"
+  # Enable OpenTelemetry Java auto-instrumentation (zero-code)
+  instrumentation.opentelemetry.io/inject-java: "true"
 
 # Health probes using actuator
 startupProbe:
@@ -43,7 +45,7 @@ image:
   registry: docker.io
   repository: danyzift/ch-users-service
   tag: 0.1.0
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 service:
   type: ClusterIP
