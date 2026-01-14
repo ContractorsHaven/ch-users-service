@@ -20,9 +20,11 @@ public class UserController {
     private final UserService service;
 
     @GetMapping
-    public Flux<User> getAll() {
-        log.info("Getting all users");
-        return service.findAll();
+    public Flux<User> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        log.info("Getting users - page: {}, size: {}", page, size);
+        return service.findAll(page, size);
     }
 
     @GetMapping("/{id}")
