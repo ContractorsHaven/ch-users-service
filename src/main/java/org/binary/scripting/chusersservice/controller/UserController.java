@@ -4,11 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.binary.scripting.chusersservice.entity.User;
 import org.binary.scripting.chusersservice.service.UserService;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -18,6 +20,7 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService service;
+    private final BuildProperties buildProperties;
 
     @GetMapping
     public Flux<User> getAll(
@@ -54,6 +57,17 @@ public class UserController {
     @DeleteMapping("/{id}")
     public Mono<Void> delete(@PathVariable UUID id) {
         return service.delete(id);
+    }
+
+    @GetMapping("/version")
+    public Mono<Map<String, String>> getVersion() {
+        return Mono.just(Map.of(
+                "name", buildProperties.getName(),
+                "version", buildProperties.getVersion(),
+                "artifact", buildProperties.getArtifact(),
+                "group", buildProperties.getGroup(),
+                "time", buildProperties.getTime().toString()
+        ));
     }
 }
 
