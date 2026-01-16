@@ -115,14 +115,23 @@ jobs:
           git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
           git push origin "v${{ steps.version.outputs.version }}"
 
-      - name: Update Helm Chart Values
+      - name: Update Helm Chart and POM Version
         if: github.ref == 'refs/heads/main'
         run: |
           # Update only the application image tag (first occurrence), not postgresql
           sed -i "0,/tag: .*/s/tag: .*/tag: ${{ steps.version.outputs.version }}/" helmchart/values.yaml
-          
+
+          # Calculate next snapshot version (increment patch by 1)
+          CURRENT_VERSION="${{ steps.version.outputs.version }}"
+          IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
+          NEXT_PATCH=$((VERSION_PARTS[2] + 1))
+          NEXT_SNAPSHOT="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.${NEXT_PATCH}-SNAPSHOT"
+
+          # Update pom.xml to next snapshot
+          mvn versions:set -DnewVersion=$NEXT_SNAPSHOT -DgenerateBackupPoms=false
+
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add helmchart/values.yaml
-          git commit -m "chore: bump image version to ${{ steps.version.outputs.version }}"
+          git add helmchart/values.yaml pom.xml
+          git commit -m "chore: bump image to ${{ steps.version.outputs.version }}, pom to $NEXT_SNAPSHOT"
           git push

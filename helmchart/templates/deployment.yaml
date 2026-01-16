@@ -89,6 +89,17 @@ spec:
                   name: {{ include "helmchart.fullname" . }}-db-secret
                   key: password
             {{- end }}
+            {{- if .Values.otel.enabled }}
+            # OpenTelemetry configuration
+            - name: OTEL_SERVICE_NAME
+              value: {{ .Values.otel.serviceName | quote }}
+            - name: OTEL_INSTRUMENTATION_COMMON_DEFAULT_ENABLED
+              value: "false"
+            {{- range $name, $enabled := .Values.otel.instrumentations }}
+            - name: OTEL_INSTRUMENTATION_{{ $name | upper | replace "-" "_" }}_ENABLED
+              value: {{ $enabled | quote }}
+            {{- end }}
+            {{- end }}
           {{- with .Values.startupProbe }}
           startupProbe:
             {{- toYaml . | nindent 12 }}

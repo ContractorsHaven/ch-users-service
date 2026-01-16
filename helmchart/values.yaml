@@ -18,12 +18,37 @@ podAnnotations:
   # Enable OpenTelemetry Java auto-instrumentation (zero-code)
   instrumentation.opentelemetry.io/inject-java: "true"
 
+# OpenTelemetry configuration - disable unused instrumentations for faster startup
+otel:
+  enabled: true
+  serviceName: ch-users-service
+  # Disable all by default, then enable only what we need
+  instrumentations:
+    # Enable instrumentations for this service
+    spring-webflux: true
+    r2dbc: true
+    kafka: true
+    netty: true
+    reactor: true
+    # Disable unused instrumentations
+    jdbc: false
+    hibernate: false
+    servlet: false
+    tomcat: false
+    jetty: false
+    grpc: false
+    aws-sdk: false
+    mongo: false
+    redis: false
+    elasticsearch: false
+    cassandra: false
+
 # Health probes using actuator
 startupProbe:
   httpGet:
     path: /actuator/health
     port: http
-  initialDelaySeconds: 10
+  initialDelaySeconds: 45
   periodSeconds: 10
   failureThreshold: 30
 
