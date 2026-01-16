@@ -118,8 +118,8 @@ jobs:
       - name: Update Helm Chart Values
         if: github.ref == 'refs/heads/main'
         run: |
-          # Update image tag in values.yaml
-          sed -i "s/tag: .*/tag: ${{ steps.version.outputs.version }}/" helmchart/values.yaml
+          # Update only the application image tag (first occurrence), not postgresql
+          sed -i "0,/tag: .*/s/tag: .*/tag: ${{ steps.version.outputs.version }}/" helmchart/values.yaml
           
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
