@@ -44,7 +44,7 @@ readinessProbe:
 image:
   registry: docker.io
   repository: danyzift/ch-users-service
-  tag: 0.0.1
+  tag: 0.0.2
   pullPolicy: Always
 
 service:
@@ -64,7 +64,7 @@ postgresql:
   enabled: true
   image:
     repository: postgres
-    tag: 0.0.1
+    tag: 0.0.2
     pullPolicy: IfNotPresent
   auth:
     database: CH-UsersDB
