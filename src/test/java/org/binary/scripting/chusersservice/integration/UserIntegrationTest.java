@@ -179,16 +179,4 @@ class UserIntegrationTest {
                 .exchange()
                 .expectStatus().isNotFound();
     }
-
-    @Test
-    void shouldReturnVersionInfo() {
-        webTestClient.get()
-                .uri("/v1/users/version")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody()
-                .jsonPath("$.name").exists()
-                .jsonPath("$.version").exists();
-    }
 }

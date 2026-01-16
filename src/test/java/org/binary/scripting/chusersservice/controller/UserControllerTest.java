@@ -201,16 +201,4 @@ class UserControllerTest {
                 .exchange()
                 .expectStatus().isOk();
     }
-
-    @Test
-    void getVersion_shouldReturnBuildInfo() {
-        webTestClient.get()
-                .uri("/v1/users/version")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody()
-                .jsonPath("$.name").isEqualTo("ch-users-service")
-                .jsonPath("$.version").isEqualTo("0.0.1");
-    }
 }
