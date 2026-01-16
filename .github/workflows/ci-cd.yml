@@ -1,0 +1,101 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+env:
+  DOCKER_IMAGE: danyzift/ch-users-service
+  REGISTRY: docker.io
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for versioning
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: mvn clean compile
+
+      - name: Run Unit Tests
+        run: mvn test
+
+      - name: Run Integration Tests
+        run: mvn verify -DskipUnitTests
+
+      - name: Determine Version
+        id: version
+        run: |
+          # Get latest tag or default to 0.0.0
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          VERSION=${LATEST_TAG#v}
+          
+          # Parse version
+          IFS='.' read -r -a VERSION_PARTS <<< "$VERSION"
+          MAJOR="${VERSION_PARTS[0]}"
+          MINOR="${VERSION_PARTS[1]}"
+          PATCH="${VERSION_PARTS[2]}"
+          
+          # Increment patch version
+          PATCH=$((PATCH + 1))
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "New version: ${NEW_VERSION}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
+            ${{ env.DOCKER_IMAGE }}:latest
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:latest
+          cache-to: type=inline
+          platforms: linux/arm64  # For Raspberry Pi
+
+      - name: Create Git Tag
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
+
+      - name: Update Helm Chart Values
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Update image tag in values.yaml
+          sed -i "s/tag: .*/tag: ${{ steps.version.outputs.version }}/" helmchart/values.yaml
+          
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add helmchart/values.yaml
+          git commit -m "chore: bump image version to ${{ steps.version.outputs.version }}"
+          git push

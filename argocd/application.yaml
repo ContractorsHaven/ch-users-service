@@ -6,7 +6,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: contractors-haven
   source:
     repoURL: git@github.com:ContractorsHaven/ch-users-service.git
     targetRevision: main
