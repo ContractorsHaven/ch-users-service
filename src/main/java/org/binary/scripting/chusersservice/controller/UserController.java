@@ -58,16 +58,5 @@ public class UserController {
     public Mono<Void> delete(@PathVariable UUID id) {
         return service.delete(id);
     }
-
-    @GetMapping("/version")
-    public Mono<Map<String, String>> getVersion() {
-        return Mono.just(Map.of(
-                "name", buildProperties.getName(),
-                "version", buildProperties.getVersion(),
-                "artifact", buildProperties.getArtifact(),
-                "group", buildProperties.getGroup(),
-                "time", buildProperties.getTime().toString()
-        ));
-    }
 }
 

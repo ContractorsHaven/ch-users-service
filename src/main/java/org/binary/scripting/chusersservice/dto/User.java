@@ -9,4 +9,10 @@ import java.util.UUID;
 public class User {
     private UUID id;
     private String username;
+    private String email;
+    private String firstName;
+    private String lastName;
+    private String mobileNumber;
+    private String createdBy;
+    private String modifiedBy;
 }

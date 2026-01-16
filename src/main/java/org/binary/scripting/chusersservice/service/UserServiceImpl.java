@@ -48,6 +48,10 @@ public class UserServiceImpl implements UserService {
                 .flatMap(existingUser -> {
                     existingUser.setUsername(user.getUsername());
                     existingUser.setEmail(user.getEmail());
+                    existingUser.setFirstName(user.getFirstName());
+                    existingUser.setLastName(user.getLastName());
+                    existingUser.setMobileNumber(user.getMobileNumber());
+                    existingUser.setModifiedBy(user.getModifiedBy());
                     return usersRepository.save(existingUser);
                 });
     }
