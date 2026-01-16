@@ -3,12 +3,11 @@ kind: Application
 metadata:
   name: ch-users-service
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   project: contractors-haven
+
   source:
-    repoURL: git@github.com:ContractorsHaven/ch-users-service.git
+    repoURL: https://github.com/ContractorsHaven/ch-users-service
     targetRevision: main
     path: helmchart
     helm:
@@ -19,8 +18,9 @@ spec:
     namespace: contractors-haven
   syncPolicy:
     automated:
-      prune: true
-      selfHeal: true
+      prune: true        # Delete resources when removed from Git
+      selfHeal: true     # Automatically sync when cluster state drifts
+      allowEmpty: false  # Don't sync if there are no resources
     syncOptions:
       - CreateNamespace=true
       - ApplyOutOfSyncOnly=true
@@ -30,3 +30,11 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 3m
+
+  # Optional: Image updater for more advanced scenarios
+  # This helps ArgoCD detect image changes faster
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas  # Ignore manual scaling
