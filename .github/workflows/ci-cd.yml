@@ -56,14 +56,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-build-cache-
 
-      - name: Build with Maven
-        run: mvn clean compile
-
-      - name: Run Unit Tests
-        run: mvn test
-
-      - name: Run Integration Tests
-        run: mvn verify -DskipUnitTests
+      - name: Build and Test
+        run: mvn clean verify
 
       - name: Determine Version
         id: version
@@ -88,6 +82,9 @@ jobs:
       - name: Set Maven Version
         run: mvn versions:set -DnewVersion=${{ steps.version.outputs.version }} -DgenerateBackupPoms=false
 
+      - name: Package JAR
+        run: mvn package -DskipTests
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -101,12 +98,13 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: Dockerfile.ci
           push: true
           tags: |
             ${{ env.DOCKER_IMAGE }}:${{ steps.version.outputs.version }}
             ${{ env.DOCKER_IMAGE }}:latest
-          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:latest
-          cache-to: type=inline
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           platforms: linux/arm64  # For Raspberry Pi
 
       - name: Create Git Tag
