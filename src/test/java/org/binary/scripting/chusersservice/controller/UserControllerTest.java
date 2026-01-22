@@ -1,6 +1,7 @@
 package org.binary.scripting.chusersservice.controller;
 
 import org.binary.scripting.chusersservice.entity.User;
+import org.binary.scripting.chusersservice.controller.UserController;
 import org.binary.scripting.chusersservice.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
