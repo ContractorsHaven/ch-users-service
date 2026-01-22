@@ -69,7 +69,7 @@ readinessProbe:
 image:
   registry: docker.io
   repository: danyzift/ch-users-service
-  tag: 0.0.6
+  tag: 0.0.7
   pullPolicy: Always
 
 service:
