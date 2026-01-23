@@ -100,6 +100,13 @@
             <artifactId>springdoc-openapi-starter-webflux-api</artifactId>
             <version>2.8.3</version>
         </dependency>
+
+        <!-- JSON Logging for Grafana/Loki -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
+            <version>8.0</version>
+        </dependency>
     </dependencies>
 
     <build>
