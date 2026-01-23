@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="ch-users-service"/>
+
+    <!-- Console appender for local development (human-readable) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- JSON appender for production (Grafana/Loki compatible) -->
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>spanId</includeMdcKeyName>
+            <customFields>{"service":"${appName}"}</customFields>
+            <fieldNames>
+                <timestamp>timestamp</timestamp>
+                <message>message</message>
+                <logger>logger</logger>
+                <thread>thread</thread>
+                <level>level</level>
+                <stackTrace>stack_trace</stackTrace>
+            </fieldNames>
+        </encoder>
+    </appender>
+
+    <!-- Use JSON logging in production, console in development -->
+    <springProfile name="default,prod,kubernetes">
+        <root level="INFO">
+            <appender-ref ref="JSON"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="dev,local">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- Application-specific logging levels -->
+    <logger name="org.binary.scripting.chusersservice" level="DEBUG"/>
+    <logger name="io.r2dbc.pool" level="DEBUG"/>
+    <logger name="io.r2dbc.postgresql" level="INFO"/>
+    <logger name="org.springframework.r2dbc" level="DEBUG"/>
+    <logger name="org.springframework.data.r2dbc" level="DEBUG"/>
+    <logger name="org.flywaydb" level="INFO"/>
+    <logger name="io.r2dbc.pool.ConnectionPool" level="DEBUG"/>
+    <logger name="io.r2dbc.pool.PoolMetrics" level="DEBUG"/>
+</configuration>
