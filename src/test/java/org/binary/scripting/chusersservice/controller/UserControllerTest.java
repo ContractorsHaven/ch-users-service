@@ -1,5 +1,6 @@
 package org.binary.scripting.chusersservice.controller;
 
+import org.binary.scripting.chusersservice.config.R2dbcAuditingConfig;
 import org.binary.scripting.chusersservice.entity.User;
 import org.binary.scripting.chusersservice.controller.UserController;
 import org.binary.scripting.chusersservice.service.UserService;
@@ -8,6 +9,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -21,7 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@WebFluxTest(UserController.class)
+@WebFluxTest(controllers = UserController.class, excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = R2dbcAuditingConfig.class))
 class UserControllerTest {
 
     @Autowired
@@ -39,6 +42,7 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         testId = UUID.randomUUID();
+        Instant now = Instant.now();
         testUser = User.builder()
                 .id(testId)
                 .username("testuser")
@@ -48,6 +52,8 @@ class UserControllerTest {
                 .mobileNumber("+1234567890")
                 .createdBy("system")
                 .modifiedBy("system")
+                .createdAt(now)
+                .modifiedAt(now)
                 .build();
 
         when(buildProperties.getName()).thenReturn("ch-users-service");

@@ -13,6 +13,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +35,7 @@ class UserServiceImplTest {
     @BeforeEach
     void setUp() {
         testId = UUID.randomUUID();
+        Instant now = Instant.now();
         testUser = User.builder()
                 .id(testId)
                 .username("testuser")
@@ -43,6 +45,8 @@ class UserServiceImplTest {
                 .mobileNumber("+1234567890")
                 .createdBy("system")
                 .modifiedBy("system")
+                .createdAt(now)
+                .modifiedAt(now)
                 .build();
     }
 
