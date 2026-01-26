@@ -1,6 +1,7 @@
 package org.binary.scripting.chusersservice.integration;
 
 import org.binary.scripting.chusersservice.entity.User;
+import org.binary.scripting.chusersservice.event.UserEventPublisher;
 import org.binary.scripting.chusersservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,11 +10,15 @@ import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTest
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
@@ -26,9 +31,18 @@ class UserIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
+    @MockitoBean
+    private UserEventPublisher userEventPublisher;
+
     @BeforeEach
     void setUp() {
         userRepository.deleteAll().block();
+        when(userEventPublisher.publishUserCreated(any(User.class)))
+                .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+        when(userEventPublisher.publishUserUpdated(any(User.class)))
+                .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+        when(userEventPublisher.publishUserDeleted(any(UUID.class)))
+                .thenReturn(Mono.empty());
     }
 
     @Test

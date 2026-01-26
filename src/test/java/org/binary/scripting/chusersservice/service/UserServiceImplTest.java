@@ -1,6 +1,7 @@
 package org.binary.scripting.chusersservice.service;
 
 import org.binary.scripting.chusersservice.entity.User;
+import org.binary.scripting.chusersservice.event.UserEventPublisher;
 import org.binary.scripting.chusersservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,9 @@ class UserServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private UserEventPublisher userEventPublisher;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -118,6 +122,8 @@ class UserServiceImplTest {
     void create_shouldSaveAndReturnUser() {
         when(userRepository.save(any(User.class)))
                 .thenReturn(Mono.just(testUser));
+        when(userEventPublisher.publishUserCreated(any(User.class)))
+                .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
 
         User newUser = User.builder()
                 .username("testuser")
@@ -134,6 +140,7 @@ class UserServiceImplTest {
                 .verifyComplete();
 
         verify(userRepository).save(newUser);
+        verify(userEventPublisher).publishUserCreated(any(User.class));
     }
 
     @Test
@@ -150,6 +157,8 @@ class UserServiceImplTest {
                 .thenReturn(Mono.just(testUser));
         when(userRepository.save(any(User.class)))
                 .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+        when(userEventPublisher.publishUserUpdated(any(User.class)))
+                .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
 
         StepVerifier.create(userService.update(testId, updatedUser))
                 .assertNext(user -> {
@@ -161,6 +170,7 @@ class UserServiceImplTest {
 
         verify(userRepository).findById(testId);
         verify(userRepository).save(any(User.class));
+        verify(userEventPublisher).publishUserUpdated(any(User.class));
     }
 
     @Test
