@@ -27,7 +27,7 @@ otel:
     # Enable instrumentations for this service
     spring-webflux: true
     r2dbc: true
-    kafka: false
+    kafka: true
     netty: true
     reactor: true
     # Disable unused instrumentations
@@ -83,6 +83,7 @@ env:
     -XX:+UseG1GC
     -XX:+UseStringDeduplication
     -Dreactor.netty.ioWorkerCount=2
+  KAFKA_BOOTSTRAP_SERVERS: "kafka-kafka.contractors-haven.svc.cluster.local:9092"
 
 requests:
   cpu: "200m"
