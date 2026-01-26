@@ -6,11 +6,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Table("users")
@@ -51,5 +54,15 @@ public class User {
     @Column("modified_by")
     @Schema(description = "User who last modified this record", accessMode = Schema.AccessMode.READ_ONLY)
     private String modifiedBy;
+
+    @CreatedDate
+    @Column("created_at")
+    @Schema(description = "Timestamp when this record was created", example = "2024-01-15T10:30:00Z", accessMode = Schema.AccessMode.READ_ONLY)
+    private Instant createdAt;
+
+    @LastModifiedDate
+    @Column("modified_at")
+    @Schema(description = "Timestamp when this record was last modified", example = "2024-01-15T14:45:00Z", accessMode = Schema.AccessMode.READ_ONLY)
+    private Instant modifiedAt;
 }
 

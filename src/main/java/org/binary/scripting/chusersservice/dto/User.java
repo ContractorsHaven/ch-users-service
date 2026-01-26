@@ -2,6 +2,7 @@ package org.binary.scripting.chusersservice.dto;
 
 import lombok.Data;
 
+import java.time.Instant;
 import java.util.UUID;
 
 
@@ -15,4 +16,6 @@ public class User {
     private String mobileNumber;
     private String createdBy;
     private String modifiedBy;
+    private Instant createdAt;
+    private Instant modifiedAt;
 }
