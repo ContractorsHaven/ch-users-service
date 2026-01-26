@@ -4,6 +4,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.binary.scripting.chusersservice.entity.User;
+import org.binary.scripting.chusersservice.event.UserEventPublisher;
 import org.binary.scripting.chusersservice.repository.UserRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ public class UserServiceImpl implements UserService {
     private static final int DEFAULT_PAGE_SIZE = 10;
 
     private final UserRepository usersRepository;
+    private final UserEventPublisher userEventPublisher;
 
     @Override
     public Flux<User> findAll(int page, int size) {
@@ -38,7 +40,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public Mono<User> create(@NonNull User user) {
         log.info("Creating user: {}", user.getUsername());
-        return usersRepository.save(user);
+        return usersRepository.save(user)
+                .flatMap(userEventPublisher::publishUserCreated);
     }
 
     @Override
@@ -53,7 +56,8 @@ public class UserServiceImpl implements UserService {
                     existingUser.setMobileNumber(user.getMobileNumber());
                     existingUser.setModifiedBy(user.getModifiedBy());
                     return usersRepository.save(existingUser);
-                });
+                })
+                .flatMap(userEventPublisher::publishUserUpdated);
     }
 
     @Override
