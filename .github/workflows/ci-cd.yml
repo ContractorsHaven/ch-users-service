@@ -118,6 +118,9 @@ jobs:
           # Update only the application image tag (first occurrence), not postgresql
           sed -i "0,/tag: .*/s/tag: .*/tag: ${{ steps.version.outputs.version }}/" helmchart/values.yaml
 
+          # Update Chart.yaml appVersion
+          sed -i "s/^appVersion: .*/appVersion: \"${{ steps.version.outputs.version }}\"/" helmchart/Chart.yaml
+
           # Calculate next snapshot version (increment patch by 1)
           CURRENT_VERSION="${{ steps.version.outputs.version }}"
           IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
@@ -129,6 +132,6 @@ jobs:
 
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add helmchart/values.yaml pom.xml
+          git add helmchart/values.yaml helmchart/Chart.yaml pom.xml
           git commit -m "chore: bump image to ${{ steps.version.outputs.version }}, pom to $NEXT_SNAPSHOT"
           git push
