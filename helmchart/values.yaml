@@ -10,13 +10,9 @@ serviceAccount:
 autoscaling:
   enabled: false
 
-# Pod annotations for Prometheus scraping and OpenTelemetry auto-instrumentation
+# Pod annotations for OpenTelemetry auto-instrumentation (metrics handled by OTEL agent)
 podAnnotations:
-  prometheus.io/scrape: "true"
-  prometheus.io/port: "8080"
-  prometheus.io/path: "/actuator/prometheus"
-  # Enable OpenTelemetry Java auto-instrumentation (zero-code)
-  instrumentation.opentelemetry.io/inject-java: "false"
+  instrumentation.opentelemetry.io/inject-java: "true"
 
 # OpenTelemetry configuration - disable unused instrumentations for faster startup
 otel:
@@ -78,19 +74,23 @@ service:
 
 env:
   JAVA_TOOL_OPTIONS: >
-    -XX:MaxRAMPercentage=70
-    -XX:InitialRAMPercentage=40
-    -XX:+UseG1GC
-    -XX:+UseStringDeduplication
+    -Xms128m -Xmx256m
+    -XX:+UseSerialGC
+    -XX:TieredStopAtLevel=1
+    -XX:MaxMetaspaceSize=64m
+    -Xss256k
+    -XX:CICompilerCount=2
+    -Dspring.jmx.enabled=false
+    -Djava.security.egd=file:/dev/./urandom
     -Dreactor.netty.ioWorkerCount=2
   KAFKA_BOOTSTRAP_SERVERS: "kafka-kafka.contractors-haven.svc.cluster.local:9092"
 
 requests:
-  cpu: "200m"
-  memory: "384Mi"
+  cpu: "100m"
+  memory: "256Mi"
 limits:
-  cpu: "1000m"
-  memory: "768Mi"
+  cpu: "500m"
+  memory: "512Mi"
 
 # PostgreSQL configuration
 postgresql:
