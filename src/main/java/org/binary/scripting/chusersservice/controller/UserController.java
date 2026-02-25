@@ -9,12 +9,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.binary.scripting.chusersservice.dto.PagedResponse;
 import org.binary.scripting.chusersservice.entity.User;
 import org.binary.scripting.chusersservice.service.UserService;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -27,17 +26,16 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService service;
-    private final BuildProperties buildProperties;
 
     @GetMapping
     @Operation(summary = "Get all users", description = "Retrieve a paginated list of all users")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved users",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = PagedResponse.class)))
     })
-    public Flux<User> getAll(
-            @Parameter(description = "Page number (0-indexed)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
+    public Mono<PagedResponse<User>> getAll(
+            @Parameter(description = "Page number", example = "1")
+            @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "Number of users per page", example = "10")
             @RequestParam(defaultValue = "10") int size) {
         log.info("Getting users - page: {}, size: {}", page, size);
