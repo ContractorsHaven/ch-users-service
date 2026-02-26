@@ -1,34 +1,58 @@
 package org.binary.scripting.chusersservice.service;
 
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.binary.scripting.chusersservice.dto.PagedResponse;
 import org.binary.scripting.chusersservice.entity.User;
 import org.binary.scripting.chusersservice.event.UserEventPublisher;
 import org.binary.scripting.chusersservice.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private static final int DEFAULT_PAGE_SIZE = 10;
 
     private final UserRepository usersRepository;
-    private final UserEventPublisher userEventPublisher;
+    private final Optional<UserEventPublisher> userEventPublisher;
+
+    @Autowired
+    public UserServiceImpl(UserRepository usersRepository, Optional<UserEventPublisher> userEventPublisher) {
+        this.usersRepository = usersRepository;
+        this.userEventPublisher = userEventPublisher;
+    }
 
     @Override
-    public Flux<User> findAll(int page, int size) {
+    public Mono<PagedResponse<User>> findAll(int page, int size) {
         int pageSize = size > 0 ? size : DEFAULT_PAGE_SIZE;
-        int pageNumber = Math.max(page, 0);
+        int pageNumber = Math.max(0, page);
         log.debug("Fetching users - page: {}, size: {}", pageNumber, pageSize);
-        return usersRepository.findAllBy(PageRequest.of(pageNumber, pageSize));
+
+        return Mono.zip(
+                usersRepository.findAllBy(PageRequest.of(pageNumber, pageSize)).collectList(),
+                usersRepository.count()
+        ).map(tuple -> {
+            var users = tuple.getT1();
+            var totalElements = tuple.getT2();
+            int totalPages = (int) Math.ceil((double) totalElements / pageSize);
+
+            return PagedResponse.<User>builder()
+                    .content(users)
+                    .page(pageNumber)
+                    .size(pageSize)
+                    .totalElements(totalElements)
+                    .totalPages(totalPages)
+                    .first(pageNumber == 0)
+                    .last(pageNumber >= totalPages - 1)
+                    .build();
+        });
     }
 
     @Override
@@ -41,7 +65,9 @@ public class UserServiceImpl implements UserService {
     public Mono<User> create(@NonNull User user) {
         log.info("Creating user: {}", user.getUsername());
         return usersRepository.save(user)
-                .flatMap(userEventPublisher::publishUserCreated);
+                .flatMap(savedUser -> userEventPublisher
+                        .map(publisher -> publisher.publishUserCreated(savedUser))
+                        .orElse(Mono.just(savedUser)));
     }
 
     @Override
@@ -57,7 +83,9 @@ public class UserServiceImpl implements UserService {
                     existingUser.setModifiedBy(user.getModifiedBy());
                     return usersRepository.save(existingUser);
                 })
-                .flatMap(userEventPublisher::publishUserUpdated);
+                .flatMap(savedUser -> userEventPublisher
+                        .map(publisher -> publisher.publishUserUpdated(savedUser))
+                        .orElse(Mono.just(savedUser)));
     }
 
     @Override

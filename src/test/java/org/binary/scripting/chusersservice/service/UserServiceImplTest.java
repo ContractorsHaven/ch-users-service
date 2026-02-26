@@ -1,12 +1,12 @@
 package org.binary.scripting.chusersservice.service;
 
+import org.binary.scripting.chusersservice.dto.PagedResponse;
 import org.binary.scripting.chusersservice.entity.User;
 import org.binary.scripting.chusersservice.event.UserEventPublisher;
 import org.binary.scripting.chusersservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
@@ -15,6 +15,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,7 +31,6 @@ class UserServiceImplTest {
     @Mock
     private UserEventPublisher userEventPublisher;
 
-    @InjectMocks
     private UserServiceImpl userService;
 
     private User testUser;
@@ -38,6 +38,8 @@ class UserServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        userService = new UserServiceImpl(userRepository, Optional.of(userEventPublisher));
+
         testId = UUID.randomUUID();
         Instant now = Instant.now();
         testUser = User.builder()
@@ -55,29 +57,41 @@ class UserServiceImplTest {
     }
 
     @Test
-    void findAll_shouldReturnUsers() {
+    void findAll_shouldReturnPagedResponse() {
         when(userRepository.findAllBy(any(PageRequest.class)))
                 .thenReturn(Flux.just(testUser));
+        when(userRepository.count())
+                .thenReturn(Mono.just(1L));
 
         StepVerifier.create(userService.findAll(0, 10))
-                .assertNext(user -> {
-                    assertThat(user.getUsername()).isEqualTo("testuser");
-                    assertThat(user.getEmail()).isEqualTo("test@example.com");
-                    assertThat(user.getFirstName()).isEqualTo("John");
-                    assertThat(user.getLastName()).isEqualTo("Doe");
+                .assertNext(response -> {
+                    assertThat(response.getContent()).hasSize(1);
+                    assertThat(response.getContent().get(0).getUsername()).isEqualTo("testuser");
+                    assertThat(response.getContent().get(0).getEmail()).isEqualTo("test@example.com");
+                    assertThat(response.getPage()).isEqualTo(0);
+                    assertThat(response.getSize()).isEqualTo(10);
+                    assertThat(response.getTotalElements()).isEqualTo(1);
+                    assertThat(response.getTotalPages()).isEqualTo(1);
+                    assertThat(response.isFirst()).isTrue();
+                    assertThat(response.isLast()).isTrue();
                 })
                 .verifyComplete();
 
         verify(userRepository).findAllBy(PageRequest.of(0, 10));
+        verify(userRepository).count();
     }
 
     @Test
     void findAll_withNegativePage_shouldUseZero() {
         when(userRepository.findAllBy(any(PageRequest.class)))
                 .thenReturn(Flux.just(testUser));
+        when(userRepository.count())
+                .thenReturn(Mono.just(1L));
 
         StepVerifier.create(userService.findAll(-1, 10))
-                .expectNextCount(1)
+                .assertNext(response -> {
+                    assertThat(response.getPage()).isEqualTo(0);
+                })
                 .verifyComplete();
 
         verify(userRepository).findAllBy(PageRequest.of(0, 10));
@@ -87,12 +101,51 @@ class UserServiceImplTest {
     void findAll_withZeroSize_shouldUseDefault() {
         when(userRepository.findAllBy(any(PageRequest.class)))
                 .thenReturn(Flux.just(testUser));
+        when(userRepository.count())
+                .thenReturn(Mono.just(1L));
 
         StepVerifier.create(userService.findAll(0, 0))
-                .expectNextCount(1)
+                .assertNext(response -> {
+                    assertThat(response.getSize()).isEqualTo(10);
+                })
                 .verifyComplete();
 
         verify(userRepository).findAllBy(PageRequest.of(0, 10));
+    }
+
+    @Test
+    void findAll_shouldCalculatePaginationCorrectly() {
+        when(userRepository.findAllBy(any(PageRequest.class)))
+                .thenReturn(Flux.just(testUser));
+        when(userRepository.count())
+                .thenReturn(Mono.just(25L));
+
+        StepVerifier.create(userService.findAll(1, 10))
+                .assertNext(response -> {
+                    assertThat(response.getPage()).isEqualTo(1);
+                    assertThat(response.getSize()).isEqualTo(10);
+                    assertThat(response.getTotalElements()).isEqualTo(25);
+                    assertThat(response.getTotalPages()).isEqualTo(3);
+                    assertThat(response.isFirst()).isFalse();
+                    assertThat(response.isLast()).isFalse();
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void findAll_onLastPage_shouldSetLastTrue() {
+        when(userRepository.findAllBy(any(PageRequest.class)))
+                .thenReturn(Flux.just(testUser));
+        when(userRepository.count())
+                .thenReturn(Mono.just(25L));
+
+        StepVerifier.create(userService.findAll(2, 10))
+                .assertNext(response -> {
+                    assertThat(response.getPage()).isEqualTo(2);
+                    assertThat(response.isFirst()).isFalse();
+                    assertThat(response.isLast()).isTrue();
+                })
+                .verifyComplete();
     }
 
     @Test

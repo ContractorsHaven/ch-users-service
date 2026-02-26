@@ -1,5 +1,6 @@
 package org.binary.scripting.chusersservice.integration;
 
+import org.binary.scripting.chusersservice.dto.PagedResponse;
 import org.binary.scripting.chusersservice.entity.User;
 import org.binary.scripting.chusersservice.event.UserEventPublisher;
 import org.binary.scripting.chusersservice.repository.UserRepository;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -170,8 +172,16 @@ class UserIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBodyList(User.class)
-                .hasSize(10);
+                .expectBody(new ParameterizedTypeReference<PagedResponse<User>>() {})
+                .value(response -> {
+                    assertThat(response.getContent()).hasSize(10);
+                    assertThat(response.getPage()).isEqualTo(0);
+                    assertThat(response.getSize()).isEqualTo(10);
+                    assertThat(response.getTotalElements()).isEqualTo(15);
+                    assertThat(response.getTotalPages()).isEqualTo(2);
+                    assertThat(response.isFirst()).isTrue();
+                    assertThat(response.isLast()).isFalse();
+                });
 
         // Get second page
         webTestClient.get()
@@ -179,8 +189,14 @@ class UserIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBodyList(User.class)
-                .hasSize(5);
+                .expectBody(new ParameterizedTypeReference<PagedResponse<User>>() {})
+                .value(response -> {
+                    assertThat(response.getContent()).hasSize(5);
+                    assertThat(response.getPage()).isEqualTo(1);
+                    assertThat(response.getTotalElements()).isEqualTo(15);
+                    assertThat(response.isFirst()).isFalse();
+                    assertThat(response.isLast()).isTrue();
+                });
     }
 
     @Test
