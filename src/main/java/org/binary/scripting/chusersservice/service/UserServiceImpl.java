@@ -32,7 +32,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Mono<PagedResponse<User>> findAll(int page, int size) {
         int pageSize = size > 0 ? size : DEFAULT_PAGE_SIZE;
-        int pageNumber = page <= 1 ? 0 : page - 1;
+        int pageNumber = Math.max(0, page);
         log.debug("Fetching users - page: {}, size: {}", pageNumber, pageSize);
 
         return Mono.zip(

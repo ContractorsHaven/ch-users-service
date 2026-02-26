@@ -1,6 +1,7 @@
 package org.binary.scripting.chusersservice.controller;
 
 import org.binary.scripting.chusersservice.config.R2dbcAuditingConfig;
+import org.binary.scripting.chusersservice.dto.PagedResponse;
 import org.binary.scripting.chusersservice.entity.User;
 import org.binary.scripting.chusersservice.controller.UserController;
 import org.binary.scripting.chusersservice.service.UserService;
@@ -11,13 +12,14 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -65,31 +67,45 @@ class UserControllerTest {
 
     @Test
     void getAll_shouldReturnUsers() {
+        PagedResponse<User> pagedResponse = PagedResponse.<User>builder()
+                .content(List.of(testUser))
+                .page(0).size(10).totalElements(1).totalPages(1)
+                .first(true).last(true)
+                .build();
+
         when(userService.findAll(0, 10))
-                .thenReturn(Flux.just(testUser));
+                .thenReturn(Mono.just(pagedResponse));
 
         webTestClient.get()
                 .uri("/v1/users?page=0&size=10")
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBodyList(User.class)
-                .hasSize(1)
-                .contains(testUser);
+                .expectBody(new ParameterizedTypeReference<PagedResponse<User>>() {})
+                .value(response -> {
+                    assert response.getContent().size() == 1;
+                    assert response.getContent().contains(testUser);
+                });
     }
 
     @Test
     void getAll_withDefaultPagination_shouldReturnUsers() {
-        when(userService.findAll(0, 10))
-                .thenReturn(Flux.just(testUser));
+        PagedResponse<User> pagedResponse = PagedResponse.<User>builder()
+                .content(List.of(testUser))
+                .page(1).size(10).totalElements(1).totalPages(1)
+                .first(true).last(true)
+                .build();
+
+        when(userService.findAll(1, 10))
+                .thenReturn(Mono.just(pagedResponse));
 
         webTestClient.get()
                 .uri("/v1/users")
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBodyList(User.class)
-                .hasSize(1);
+                .expectBody(new ParameterizedTypeReference<PagedResponse<User>>() {})
+                .value(response -> { assert response.getContent().size() == 1; });
     }
 
     @Test
